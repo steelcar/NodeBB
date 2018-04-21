@@ -1,20 +1,30 @@
-# The base image is the latest 8.x node (LTS)
-FROM node:8.9.0
+ARG NODE_VERSION
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
 
-ARG NODE_ENV
-ENV NODE_ENV $NODE_ENV
-COPY install/package.json /usr/src/app/package.json
-RUN npm install && npm cache clean --force
-COPY . /usr/src/app
 
-ENV NODE_ENV=production \
-    daemon=false \
-    silent=false
+FROM node:${NODE_VERSION} as node-modules
+WORKDIR /app
+COPY package.json yarn.lock ./
+RUN yarn --production --pure-lockfile
 
-CMD ./nodebb start
 
-# the default port for NodeBB is exposed outside the container
+
+FROM node:${NODE_VERSION}-slim as PROD
+
+ENV NODE_ENV production
+ENV TINI_VERSION v0.17.0
+
+WORKDIR /app
+
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
+COPY . .
+COPY --from=node-modules /app/node_modules/ /app/node_modules/
+
+RUN chmod +x /tini
+
+ENTRYPOINT ["/tini", "--", "./nodebb"]
+CMD ["start"]
+
 EXPOSE 4567

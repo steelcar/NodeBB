@@ -1,4 +1,3 @@
-yarn.lock
 npm-debug.log
 node_modules/
 sftp-config.json
@@ -66,4 +65,3 @@ build
 test/files/normalise.jpg.png
 test/files/normalise-resized.jpg
 package-lock.json
-/package.json
